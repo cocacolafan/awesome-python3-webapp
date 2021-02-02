@@ -112,14 +112,16 @@ def datetime_filter(t):
 async def init(loop):
     await orm.create_pool(loop=loop, host='127.0.0.1', port=3306, user='www-data', password='www-data', db='awesome')
     app = web.Application(middlewares=[      # 删掉loop=loop，cmd提示loop参数已经弃用
-        logger_factory, response_factory
+        logger_factory, response_factory     # #拦截器 一个URL在被某个函数处理前，可以经过一系列的middleware的处理。
     ])
     init_jinja2(app, filter=dict(datetime=datetime_filter))
     add_routes(app, 'handlers')
     add_static(app)
-    srv = await loop.create_server(app.make_handler(), '127.0.0.1', 9000)
+    runner = web.AppRunner(app)
+    await runner.setup()
+    site = web.TCPSite(runner, '127.0.0.1', 9000)
     logging.info('server started at http://127.0.0.1:9000...')
-    return srv
+    await site.start()
 
 loop = asyncio.get_event_loop()
 loop.run_until_complete(init(loop))
