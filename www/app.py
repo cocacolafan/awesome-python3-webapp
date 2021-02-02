@@ -21,17 +21,17 @@ def init_jinja2(app, **kw):
     logging.info('init jinja2...')
     options = dict(
         autoescape = kw.get('autoescape', True),
-        block_start_string = kw.get('block_start_string', '{%'),
+        block_start_string = kw.get('block_start_string', '{%'),  # jinja渲染执行块的开始标志--块的开始标志
         block_end_string = kw.get('block_end_string', '%}'),
-        variable_start_string = kw.get('variable_start_string', '{{'),
+        variable_start_string = kw.get('variable_start_string', '{{'),   # jinja所渲染的变量的识别开始----以{{}}识别变量
         variable_end_string = kw.get('variable_end_string', '}}'),
         auto_reload = kw.get('auto_reload', True)
     )
     path = kw.get('path', None)
     if path is None:
-        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')
+        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')   # 要渲染模板/template/所在的路径
     logging.info('set jinja2 template path: %s' % path)
-    env = Environment(loader=FileSystemLoader(path), **options)
+    env = Environment(loader=FileSystemLoader(path), **options)    # jinja2的简单入门：将模板的path传给FieSystemLoader创建loader加载器，加载器传给env环境，环境有一些可选参数
     filters = kw.get('filters', None)
     if filters is not None:
         for name, f in filters.items():
@@ -111,7 +111,7 @@ def datetime_filter(t):
 
 async def init(loop):
     await orm.create_pool(loop=loop, host='127.0.0.1', port=3306, user='www-data', password='www-data', db='awesome')
-    app = web.Application(loop = loop, middlewares=[
+    app = web.Application(middlewares=[      # 删掉loop=loop，cmd提示loop参数已经弃用
         logger_factory, response_factory
     ])
     init_jinja2(app, filter=dict(datetime=datetime_filter))

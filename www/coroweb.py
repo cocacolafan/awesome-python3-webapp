@@ -162,7 +162,7 @@ def add_routes(app, module_name):
         name = module_name[n+1:]
         mod = getattr(__import__(module_name[:n], globals(), locals(), [name]), name)  # 返回name属性的属性值，即为子模块
     for attr in dir(mod):     # dir(a)返回包含a的所有属性、方法名字的list
-        if attr.startswith('_'):    # 去除__name__的特殊方法，因为这些方法按约定好的是用不到
+        if attr.startswith('_'):    # 去除__name__的特殊方法，因为这些方法按约定好的是不希望在被导入的时候导入，对import调用者是没用的
             continue
         fn = getattr(mod, attr)     # 返回模块的属性或方法
         if callable(fn):
