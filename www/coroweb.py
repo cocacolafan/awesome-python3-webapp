@@ -148,7 +148,7 @@ def add_route(app, fn):    # 编写add_route函数，用来注册一个URL处理
     path = getattr(fn, '__route__', None)
     if path is None or method is None:
         raise ValueError('@get or @post not defined in %s' % str(fn))
-    if not asyncio.iscoroutinefunction(fn) and not inspect.isgenerator(fn):   # 如果不是协程或一个generator，将其转化为coroutine
+    if not asyncio.iscoroutinefunction(fn) and not inspect.isgenerator(fn):   # 如果不是协程函数，也不是generator，将其转化为coroutine
         fn = asyncio.coroutine(fn)
     logging.info('add route %s %s => %s(%s)' % (method, path, fn.__name__, ', '.join(inspect.signature(fn).parameters.keys())))
     app.router.add_route(method, path, RequestHandler(app, fn))
