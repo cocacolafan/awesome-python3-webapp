@@ -8,6 +8,7 @@ from apis import APIError
 def get(path):
     '''
     Define decorator @get('/path)
+    监控访问的参数，因为有好多，所以打包成一个装饰器，用来封装处理部分函数，重复利用。
     '''
     def decorator(func):
         @functools.wraps(func)

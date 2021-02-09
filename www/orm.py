@@ -49,12 +49,6 @@ async def excute(sql, args):
             raise
         return affected
 
-def create_args_string(num):
-    L = []
-    for n in range(num):
-        L.append('?')
-    return ", ".join(L)
-
 class Field(object):
     def __init__(self, name, column_type, primary_key, default):
         self.name = name
@@ -85,13 +79,20 @@ class TextField(Field):
     def __init__(self, name=None, default=None):
         super().__init__(name, 'text', False, default)
 
+def create_args_string(num):
+    L = []
+    for n in range(num):
+        L.append('?')
+    return ", ".join(L)
+
+
 class ModelMetaclass(type):
     def __new__(cls, name, bases, attrs):
         if name == 'Model':
             return type.__new__(cls, name, bases, attrs)
         tableName = attrs.get('__table__', None) or name  # 如果类自己定义了__table__便用自己定义的，没有返回默认值None，然后执行or后面的，将__table__设置为类的名字
         logging.info('found model: %s (table: %s)' % (name, tableName))
-        mappings = dict()
+        mappings = dict()  # 存储着mysql的所有field
         fields = []   # primary_Key为True的XXXField不存在这里，保存在primaryKey中
         primaryKey = None
         for k, v in attrs.items():
@@ -109,12 +110,12 @@ class ModelMetaclass(type):
             raise RuntimeError('Primary key is not founded.')
         for k in mappings.keys():  # 清洗attrs，把已经通过__new__方法拿出来的XXXField属性从attrs删除掉，然后再用剩下的属性创建类
             attrs.pop(k)
-        escaped_fields = list(map(lambda f: '`%s`' % f, fields))  # 转义field名称: field[]==>`field[]`
+        escaped_fields = list(map(lambda f: '`%s`' % f, fields))  # 转义field名称: field==>`field`，mysql脚本中，用``来闭合field
         attrs['__mappings__'] = mappings   # 挑出来的XXXField类字典保存到类的__mappings__属性中
         attrs['__table__'] = tableName
         attrs['__primary_key__'] = primaryKey  # 设置为主键的属性名
         attrs['__fields__'] = fields # 除去设置为主键值属性的属性名
-        attrs['__select__'] = 'select `%s`, %s from `%s`' % (primaryKey, ', '.join(escaped_fields), tableName)
+        attrs['__select__'] = 'select `%s`, %s from `%s`' % (primaryKey, ', '.join(escaped_fields), tableName)  # 此类封装的是自己定义的field全选，以下各个语句都是全部
         attrs['__insert__'] = 'insert into `%s` (%s, `%s`) values (%s)' % (tableName, ', '.join(escaped_fields), primaryKey, create_args_string(len(escaped_fields) + 1))
         attrs['__update__'] = 'update `%s` set %s where `%s`=?' % (tableName, ', '.join(map(lambda f: '`%s`=?' % (mappings.get(f).name or f), fields)), primaryKey)
         attrs['__delete__'] = 'delete from `%s` where `%s`=?' % (tableName, primaryKey)
@@ -132,9 +133,9 @@ class Model(dict, metaclass=ModelMetaclass):
     # 设置自身属性：
     def __setattr__(self, key, value):
         self[key] = value
-    # 通过属性返回一个lazy function：
+
     def getValue(self, key):
-        return getattr(self, key, None)   # 返回一个惰性函数
+        return getattr(self, key, None)
          
     def getValueOrDefault(self, key):  # 调用key的值，自身的属性中没有这个值的时候用储存在__mapping__中的同名属性默认值返回
         value = getattr(self, key, None)
@@ -178,7 +179,7 @@ class Model(dict, metaclass=ModelMetaclass):
     @classmethod
     async def findNumber(cls, selectField, where=None, args=None):
         'find number by select and where. '
-        sql = ['select %s _num_from `%s`' % (selectField, cls.__table__)]
+        sql = ['select %s _num_ from `%s`' % (selectField, cls.__table__)]
         if where:
             sql.append('where')
             sql.append(where)

@@ -114,7 +114,7 @@ async def init(loop):
     app = web.Application(middlewares=[      # 删掉loop=loop，cmd提示loop参数已经弃用
         logger_factory, response_factory     # #拦截器 一个URL在被某个函数处理前，可以经过一系列的middleware的处理。
     ])
-    init_jinja2(app, filter=dict(datetime=datetime_filter))
+    init_jinja2(app, filters=dict(datetime=datetime_filter))
     add_routes(app, 'handlers')
     add_static(app)
     runner = web.AppRunner(app)
@@ -126,3 +126,4 @@ async def init(loop):
 loop = asyncio.get_event_loop()
 loop.run_until_complete(init(loop))
 loop.run_forever()
+ 
